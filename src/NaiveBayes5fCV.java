@@ -1,86 +1,77 @@
-package dataminingexample;
-
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Random;
 import weka.attributeSelection.BestFirst;
 import weka.attributeSelection.CfsSubsetEval;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
-import weka.classifiers.lazy.IB1;
-import weka.core.Capabilities;
 import weka.core.Instances;
+import weka.core.converters.ConverterUtils;
 import weka.filters.Filter;
 import weka.filters.supervised.attribute.AttributeSelection;
 
+import java.io.*;
+import java.util.Random;
 
-///////////////////////////////////////////////////////
-// Observa: http://weka.wikispaces.com/Use+Weka+in+your+Java+code
-///////////////////////////////////////////////////////
-public class DataMiningExample {
+public class NaiveBayes5fCV {
 
     public static void main(String[] args) throws Exception {
-        /////////////////////////////////////////////////////////////
-        FileReader fi=null;
-        try {
-            fi= new FileReader("~/software/weka-3-6-9/data/breast-cancer.arff");
-        } catch (FileNotFoundException e) {
-            System.out.println("ERROR: Revisar path del fichero de datos:"+args[0]);
-        }
+        // Datuak kargatu
+        // String inPath = args[0];
+        String inPath = "C:/Users/radio/Desktop/System/Uni/3/Erabakiak/1. Praktika Datuak-20240122/heart-c.arff";
+        ConverterUtils.DataSource source = new ConverterUtils.DataSource(inPath);
+        Instances data = source.getDataSet();
+        // Emaitzak gorde
+        // String outPath = args[1];
+        String outPath = "C:/Users/radio/Desktop/emaitzakArik2.txt";
 
-        Instances data=null;
-        try {
-            data = new Instances(fi);
-        } catch (IOException e) {
-            System.out.println("ERROR: Revisar contenido del fichero de datos: "+args[0]);
-        }
+        //Integer folds= args[3]
+        Integer folds=5;
 
-        try {
-            fi.close();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-        }
+        // Klasea esleitu
+        data.setClassIndex(data.numAttributes() - 1);
+        // Atributuak aukeratu filtroa aplikatuz
+        AttributeSelection filter = applyAttributeSelection(data);
+        // Datuei filtroa aplikatu
+        Instances newData = Filter.useFilter(data, filter);
+        // NaiveBayes classifier-a adierazi
+        NaiveBayes classifier = new NaiveBayes();
+        // 5-fold cross-validation
+        Evaluation evaluator = crossValidateModel(classifier, newData, folds, new Random(1));
+        // Emaitzak gorde
+        saveResults(evaluator, outPath);
+    }
 
-        data.setClassIndex(data.numAttributes()-1);
-
-
-        /////////////////////////////////////////////////////////////
-        AttributeSelection filter= new AttributeSelection();
+    private static AttributeSelection applyAttributeSelection(Instances data) throws Exception {
+        AttributeSelection filter = new AttributeSelection();
         CfsSubsetEval eval = new CfsSubsetEval();
-        BestFirst search=new BestFirst();
+        BestFirst search = new BestFirst();
         filter.setEvaluator(eval);
         filter.setSearch(search);
         filter.setInputFormat(data);
+        return filter;
+    }
 
-        Instances newData = Filter.useFilter(data, filter);
+    private static Evaluation crossValidateModel(NaiveBayes classifier, Instances data, int folds, Random seed)
+            throws Exception {
+        Evaluation evaluator = new Evaluation(data);
+        evaluator.crossValidateModel(classifier, data, folds, seed);
+        return evaluator;
+    }
 
+    private static void saveResults(Evaluation evaluator, String outputPath) throws Exception {
+        FileWriter fileWriter = new FileWriter(outputPath);
 
-
-        /////////////////////////////////////////////////////////////
-        //
-        NaiveBayes estimador= new NaiveBayes();
-
-        //
-        Evaluation evaluator = new Evaluation(newData);
-        evaluator.crossValidateModel(estimador, newData, 10, new Random(1)); // Random(1): the seed=1 means "no shuffle" :-!
-        //
-        double acc=evaluator.pctCorrect();
-        double inc=evaluator.pctIncorrect();
-        double kappa=evaluator.kappa();
-        double mae=evaluator.meanAbsoluteError();
-        double rmse=evaluator.rootMeanSquaredError();
-        double rae=evaluator.relativeAbsoluteError();
-        double rrse=evaluator.rootRelativeSquaredError();
-        double confMatrix[][]= evaluator.confusionMatrix();
-
-        System.out.println("Correctly Classified Instances  " + acc);
-        System.out.println("Incorrectly Classified Instances  " + inc);
-        System.out.println("Kappa statistic  " + kappa);
-        System.out.println("Mean absolute error  " + mae);
-        System.out.println("Root mean squared error  " + rmse);
-        System.out.println("Relative absolute error  " + rae);
-        System.out.println("Root relative squared error  " + rrse);
-
+        //Exekuzio data/ordua
+        fileWriter.write("Data/ordua: " + java.time.LocalDateTime.now() + "\n\n");
+        //Emaitza datuak
+        fileWriter.write("Correctly Classified Instances: " + evaluator.pctCorrect() + " %\n");
+        fileWriter.write("Incorrectly Classified Instances: " + evaluator.pctIncorrect() + " %\n" );
+        fileWriter.write("Kappa: " + evaluator.kappa() + " %\n\n\n" );
+        //Nahasmen matrizea
+        fileWriter.write(evaluator.toMatrixString());
+        //Precision metrikak
+        fileWriter.write(evaluator.toClassDetailsString());
+        fileWriter.write("\nWeighted Avg Precision:\n" + evaluator.weightedPrecision());
+        //fileWriter Itxi
+        fileWriter.flush();
+        fileWriter.close();
     }
 }
