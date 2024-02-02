@@ -14,14 +14,13 @@ public class NaiveBayes5fCV {
 
     public static void main(String[] args) throws Exception {
         // Datuak kargatu
-        // String inPath = args[0];
-        String inPath = "C:/Users/radio/Desktop/System/Uni/3/Erabakiak/1. Praktika Datuak-20240122/heart-c.arff";
+        String inPath = args[0];
+        //String inPath = "C:/Users/radio/Desktop/System/Uni/3/Erabakiak/1. Praktika Datuak-20240122/heart-c.arff";
         ConverterUtils.DataSource source = new ConverterUtils.DataSource(inPath);
         Instances data = source.getDataSet();
         // Emaitzak gorde
-        // String outPath = args[1];
-        String outPath = "C:/Users/radio/Desktop/emaitzakArik2.txt";
-
+        String outPath = args[1];
+        //String outPath = "C:/Users/radio/Desktop/emaitzakArik2.txt";
 
 
         // Klasea esleitu
