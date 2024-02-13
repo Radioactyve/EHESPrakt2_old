@@ -53,12 +53,11 @@ public class NaiveBayes5fCV {
         else{
             // Estratificar el conjunto de datos
             StratifiedRemoveFolds stratifiedFilter = new StratifiedRemoveFolds();
+            stratifiedFilter.setInputFormat(newData);
+
             stratifiedFilter.setNumFolds(2); // Dividir en dos conjuntos
             stratifiedFilter.setFold(1); // Seleccionar el primer conjunto (entrenamiento)
-            stratifiedFilter.setInputFormat(newData);
             Instances trainData = Filter.useFilter(newData, stratifiedFilter);
-
-            // Obtener el conjunto de datos restante (pruebas)
             stratifiedFilter.setFold(2); // Seleccionar el segundo conjunto (pruebas)
             Instances testData = Filter.useFilter(newData, stratifiedFilter);
 
